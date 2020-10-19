@@ -1,19 +1,16 @@
 package hr.zemris.ppj.commons;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class ENKA {
 
-    private HashMap<PairState<Integer, Character>, ArrayList<Integer>> transitions;
+    private HashMap<Pair<Integer, Character>, ArrayList<Integer>> transitions;
     private int count = 0;
-    private String startState;
-    private String acceptableState;
+    private ArrayList<Integer> acceptableState;
 
     public ENKA() {
-
+        transitions = new HashMap<>();
+        acceptableState = new ArrayList<>();
     }
 
     private int NewState() {
@@ -43,9 +40,8 @@ public class ENKA {
         return res < curr ? res : 0;
     }
 
-    public PairState<Integer, Integer> RegexToENKA(String regex) {
+    public Pair<Integer, Integer> RegexToENKA(String regex) {
         ArrayList<String> choices = new ArrayList<>();
-
         int brackets = 0;
         int lastCut = 0;
         for (int i = 0; i < regex.length(); i++) {
@@ -56,23 +52,26 @@ public class ENKA {
             else if (curr == ')' && IsOperator(regex, i))
                 brackets--;
             else if (brackets == 0 && curr == '|' && IsOperator(regex, i)) {
-                lastCut = IdxGroup(regex, i, choices.size());
-                choices.add(regex.substring(lastCut, i));
+                if (lastCut != 0)
+                    choices.add(regex.substring(lastCut + 1, i));
+                else
+                    choices.add(regex.substring(lastCut, i));
+                lastCut = i;
             }
 
         }
 
         if (choices.size() > 1)
-            choices.add(regex.substring(lastCut, regex.length() - 1));
+            choices.add(regex.substring(lastCut + 1, regex.length()));
 
         int left = NewState();
         int right = NewState();
 
         if (choices.size() > 1) {
             for (int i = 0; i < choices.size(); i++) {
-                PairState<Integer, Integer> tmp = RegexToENKA(choices.get(i));
-                AddEpsilonState(left, tmp.left);
-                AddEpsilonState(right, tmp.right);
+                Pair<Integer, Integer> tmp = RegexToENKA(choices.get(i));
+                AddEpsilonState(left, tmp.first);
+                AddEpsilonState(right, tmp.second);
             }
         } else {
             Boolean prefix = false;
@@ -131,9 +130,9 @@ public class ENKA {
                             }
 
                         }
-                        PairState<Integer, Integer> tmp = RegexToENKA(regex.substring(i + 1, j - 1));
-                        a = tmp.left;
-                        b = tmp.right;
+                        Pair<Integer, Integer> tmp = RegexToENKA(regex.substring(i + 1, j - 1));
+                        a = tmp.first;
+                        b = tmp.second;
                         i = j;
                     }
                 }
@@ -156,7 +155,9 @@ public class ENKA {
             AddEpsilonState(last, right);
         }
 
-        return new PairState<>(left, right);
+        acceptableState.add(right);
+        AddEpsilonState(0, left);
+        return new Pair<>(left, right);
     }
 
     private void AddEpsilonState(Integer left, Integer right) {
@@ -164,11 +165,52 @@ public class ENKA {
     }
 
     private void AddTransition(Integer left, Integer right, Character transition) {
-        PairState<Integer, Character> pair = new PairState(left, transition);
-        ArrayList<Integer> tmp = transitions.get(pair);
+        Pair<Integer, Character> pair = new Pair(left, transition);
+        ArrayList<Integer> tmp = this.transitions.get(pair);
         if (tmp == null)
             tmp = new ArrayList<>();
-        tmp.add(right);
-        transitions.replace(pair, tmp);
+        if (!tmp.contains(right))
+            tmp.add(right);
+
+        if (transitions.get(pair) != null)
+            this.transitions.replace(pair, tmp);
+        else
+            this.transitions.put(pair, tmp);
+    }
+
+    public ArrayList<Integer> ETransition(Pair<Integer, Character> delta) {
+        Stack<Integer> stog = new Stack<>();
+        ArrayList<Integer> Y = new ArrayList<>();
+
+        var states = transitions.get(delta);
+        if (states != null) {
+            for (var state : states) {
+                stog.push(state);
+                Y.add(state);
+            }
+        }
+
+        while (!stog.empty()) {
+            Integer t = stog.pop();
+            var etrans = transitions.get(new Pair<>(t, '$'));
+            if (etrans != null) {
+                for (Integer v : etrans) {
+                    if (!Y.contains(v)) {
+                        Y.add(v);
+                        stog.push(v);
+                    }
+                }
+            }
+        }
+
+        return Y;
+    }
+
+    public HashMap<Pair<Integer, Character>, ArrayList<Integer>> getTransitions() {
+        return transitions;
+    }
+
+    public ArrayList<Integer> getAcceptableState() {
+        return acceptableState;
     }
 }
