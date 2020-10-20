@@ -31,9 +31,10 @@ public class Pair<T, K> {
 
     @Override
     public String toString() {
-        return "(" + first +
-                "," + second +
-                ')';
+        if(this.second == "\n")
+            return "(" + first + ", \\n)";
+        else
+            return "(" + first + ", \"" + second + "\")";
     }
 
     @Override

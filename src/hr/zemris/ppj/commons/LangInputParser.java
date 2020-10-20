@@ -21,52 +21,48 @@ public class LangInputParser {
     }
 
     private void ParseFile() {
-        int part = 0;
+        int part = -1;
         String data = "";
 
         for (String line : fileContent) {
-            if (part == 0 && line.contains("%X ")) {
+            if (part == -1 && line.contains("%X ")) {
                 part = 1;
-            } else if (part == 1 && line.contains("%L ")) {
+            } else if (part == -1 && line.contains("%L ")) {
                 part = 2;
             } else if (part == 2 && line.contains("<")) {
                 part = 3;
-            } else if (part == 4 && fileContent.get(fileContent.size() - 1) == line) {
-                part = 5;
             }
 
             switch (part) {
-                case 0:
-                    data += line;
-                    data += "\n";
-                    break;
                 case 1:
                     this.regExDict = RegExParse(data);
-                case 2:
-                    this.lexStates = LexerStateParse(line);
                     data = "";
-                    part = 3;
+                    part = -1;
+                    break;
+                case 2:
+                    this.lexStates = LexerStateParse(data);
+                    data = "";
                     break;
                 case 3:
-                    this.lexTokens = LexerTokenParse(line);
+                    this.lexTokens = LexerTokenParse(data);
+                    part = -1;
                     data = "";
-                    part = 4;
                     break;
-                case 4:
-                    data += line;
-                    data += "\n";
-                    break;
-                case 5:
-                    data += line;
-                    this.lexRules = LexerRulesParse(data);
                 default:
                     break;
             }
+
+            data += line;
+            data += "\n";
         }
+        this.lexRules = LexerRulesParse(data);
+
     }
 
 
     private static HashMap<String, String> RegExParse(String data) {
+        if(data == "") return null;
+
         HashMap<String, String> dict = new HashMap<>();
         List<String> lines = Arrays.asList(data.split("\n"));
 
@@ -90,13 +86,19 @@ public class LangInputParser {
 
     private List<String> LexerStateParse(String data) {
         data = data.replace("%X ", "");
-        var states = Arrays.asList(data.split(" "));
+        var states = new ArrayList<String>();
+        for(String state : data.split(" ")) {
+            states.add(state.replace("\n", ""));
+        }
         return states;
     }
 
     private List<String> LexerTokenParse(String data) {
         data = data.replace("%L ", "");
-        var states = Arrays.asList(data.split(" "));
+        var states = new ArrayList<String>();
+        for(String state : data.split(" ")) {
+            states.add(state.replace("\n", ""));
+        }
         return states;
     }
 
@@ -104,7 +106,7 @@ public class LangInputParser {
         HashMap<Pair<String, String>, ArrayList<String>> dict = new HashMap<>();
         List<String> lines = Arrays.asList(data.split("\n"));
 
-        Pair ps = new Pair("", "");
+        Pair<String, String> ps = new Pair("", "");
         ArrayList<String> array = new ArrayList<>();
 
         boolean read = false;
@@ -116,6 +118,18 @@ public class LangInputParser {
             if(line.contains("{")) {
                 read = true;
             } else if(line.contains("}")) {
+                var str = ps.second;
+
+                for(String regex : regExDict.keySet()) {
+                    if(str.contains(regex)) {
+                        var value = regExDict.get(regex);
+                        var key = regex.replaceAll("\\{", "\\\\{");
+                        key = key.replaceAll("\\}", "\\\\}");
+                        str = str.replaceAll(key, value);
+                    }
+                }
+
+                ps.second = str;
                 dict.put(ps, array);
                 read = false;
                 ps = new Pair("", "");

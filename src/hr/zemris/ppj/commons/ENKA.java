@@ -130,7 +130,7 @@ public class ENKA {
                             }
 
                         }
-                        Pair<Integer, Integer> tmp = RegexToENKA(regex.substring(i + 1, j - 1));
+                        Pair<Integer, Integer> tmp = RegexToENKA(regex.substring(i + 1, j + 1));
                         a = tmp.first;
                         b = tmp.second;
                         i = j;

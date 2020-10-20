@@ -6,8 +6,15 @@ import hr.zemris.ppj.commons.Pair;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class LA {
+
+    public static void main(String[] args) {
+
+
+    }
+
 
     // program simulator
     public LA(String fileName, ENKA enka) {
