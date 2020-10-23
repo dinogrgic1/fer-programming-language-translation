@@ -1,4 +1,4 @@
-package hr.zemris.ppj.commons;
+package commons;
 
 import java.io.*;
 import java.util.*;
@@ -11,6 +11,8 @@ public class LangInputParser {
     public HashMap<Pair<String, String>, ArrayList<String>> lexRules;
     private HashMap<String, String> regExDict = new HashMap<>();
 
+
+
     public LangInputParser(String filePath) {
         try {
             fileContent = LangInputParser.ReadFileAsString(filePath);
@@ -22,7 +24,7 @@ public class LangInputParser {
 
     private void ParseFile() {
         int part = -1;
-        String data = "";
+        ArrayList<String> data = new ArrayList<>();
 
         for (String line : fileContent) {
             if (part == -1 && line.contains("%X ")) {
@@ -36,37 +38,34 @@ public class LangInputParser {
             switch (part) {
                 case 1:
                     this.regExDict = RegExParse(data);
-                    data = "";
+                    data = new ArrayList<>();
                     part = -1;
                     break;
                 case 2:
                     this.lexStates = LexerStateParse(data);
-                    data = "";
+                    data = new ArrayList<>();
                     break;
                 case 3:
                     this.lexTokens = LexerTokenParse(data);
                     part = -1;
-                    data = "";
+                    data = new ArrayList<>();
                     break;
                 default:
                     break;
             }
-
-            data += line;
-            data += "\n";
+            data.add(line);
         }
         this.lexRules = LexerRulesParse(data);
 
     }
 
 
-    private static HashMap<String, String> RegExParse(String data) {
-        if(data == "") return null;
+    private static HashMap<String, String> RegExParse(ArrayList<String> data) {
+        if(data.isEmpty()) return null;
 
         HashMap<String, String> dict = new HashMap<>();
-        List<String> lines = Arrays.asList(data.split("\n"));
 
-        for (String line : lines) {
+        for (String line : data) {
             String[] arr = line.split(" ");
             dict.put(arr[0], arr[1]);
         }
@@ -84,33 +83,42 @@ public class LangInputParser {
         return dict;
     }
 
-    private List<String> LexerStateParse(String data) {
-        data = data.replace("%X ", "");
+    private List<String> LexerStateParse(ArrayList<String> data) {
         var states = new ArrayList<String>();
-        for(String state : data.split(" ")) {
-            states.add(state.replace("\n", ""));
+        for(var str : data)
+        {
+            str = str.replace("%X ", "");
+            for(String state : str.split(" ")) {
+                states.add(state.replace("\n", ""));
+            }
         }
         return states;
     }
 
-    private List<String> LexerTokenParse(String data) {
-        data = data.replace("%L ", "");
+    private List<String> LexerTokenParse(ArrayList<String> data) {
         var states = new ArrayList<String>();
-        for(String state : data.split(" ")) {
-            states.add(state.replace("\n", ""));
+        for(var str : data)
+        {
+            str = str.replace("LX ", "");
+            for(String state : str.split(" ")) {
+                states.add(state.replace("\n", ""));
+            }
         }
         return states;
     }
 
-    private HashMap<Pair<String, String>, ArrayList<String>> LexerRulesParse(String data) {
+    public HashMap<Pair<String, String>, ArrayList<String>> getLexRules() {
+        return lexRules;
+    }
+
+    private HashMap<Pair<String, String>, ArrayList<String>> LexerRulesParse(ArrayList<String> data) {
         HashMap<Pair<String, String>, ArrayList<String>> dict = new HashMap<>();
-        List<String> lines = Arrays.asList(data.split("\n"));
 
         Pair<String, String> ps = new Pair("", "");
         ArrayList<String> array = new ArrayList<>();
 
         boolean read = false;
-        for(String line : lines) {
+        for(String line : data) {
             if(line.contains("<")) {
                 ps = new Pair(line.substring(1, line.indexOf(">")), line.substring(line.indexOf(">") + 1));
             }
@@ -119,13 +127,17 @@ public class LangInputParser {
                 read = true;
             } else if(line.contains("}")) {
                 var str = ps.second;
+                str = str.replace("\\_", "_");
 
-                for(String regex : regExDict.keySet()) {
-                    if(str.contains(regex)) {
-                        var value = regExDict.get(regex);
-                        var key = regex.replaceAll("\\{", "\\\\{");
-                        key = key.replaceAll("\\}", "\\\\}");
-                        str = str.replaceAll(key, value);
+                if(regExDict != null)
+                {
+                    for(String regex : regExDict.keySet()) {
+                        if(str.contains(regex)) {
+                            var value = regExDict.get(regex);
+                            var key = regex.replaceAll("\\{", "\\\\{");
+                            key = key.replaceAll("\\}", "\\\\}");
+                            str = str.replaceAll(key, value);
+                        }
                     }
                 }
 
@@ -163,5 +175,9 @@ public class LangInputParser {
             e.printStackTrace();
         }
         return file;
+    }
+
+    public List<String> getLexStates() {
+        return lexStates;
     }
 }

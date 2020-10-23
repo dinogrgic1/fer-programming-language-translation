@@ -1,4 +1,4 @@
-package hr.zemris.ppj.commons;
+package commons;
 
 import java.util.*;
 
@@ -11,6 +11,27 @@ public class ENKA {
     public ENKA() {
         transitions = new HashMap<>();
         acceptableState = new ArrayList<>();
+    }
+
+    public ENKA(HashMap<Pair<Integer, Character>, ArrayList<Integer>> transitions, ArrayList<Integer> acceptableState)
+    {
+        this.transitions = transitions;
+        this.acceptableState = acceptableState;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ENKA enka = (ENKA) o;
+        return count == enka.count &&
+                Objects.equals(transitions, enka.transitions) &&
+                Objects.equals(acceptableState, enka.acceptableState);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(transitions, count, acceptableState);
     }
 
     private int NewState() {

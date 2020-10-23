@@ -1,4 +1,4 @@
-package hr.zemris.ppj.commons;
+package commons;
 
 import java.util.Objects;
 
@@ -31,10 +31,12 @@ public class Pair<T, K> {
 
     @Override
     public String toString() {
-        if(this.second == "\n")
-            return "(" + first + ", \\n)";
-        else
-            return "(" + first + ", \"" + second + "\")";
+        if(second instanceof String)
+            return String.format("(%s,%s)", first, second);
+        if(second instanceof Character)
+            if(((Character) second).charValue() == '\n')
+                return String.format("(%s,'\\n')", first, second);
+            return String.format("(%s,'%c')", first, second);
     }
 
     @Override
